@@ -2,6 +2,7 @@
   "name": "crawler-cli",
   "version": "0.1.0",
   "description": "A simple command line app for controlling a GitHub Crawler",
+  "main": "./lib/crawlerClient.js",
   "scripts": {
     "start": "node ./bin/cc.js"
   },
@@ -10,8 +11,20 @@
     "API",
     "crawler"
   ],
-  "author": "Jeff McAffer",
+  "author": "Jeff McAffer <jmcaffer@microsoft.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/microsoft/crawler-cli.git"
+  },
+  "homepage": "https://github.com/microsoft/crawler-cli#readme",
+  "bugs": {
+    "url": "https://github.com/microsoft/crawler-cli/issues"
+  },
+  "files": [
+    "bin/cc",
+    "lib/crawlerClient.js"
+  ],
   "dependencies": {
     "argv-split": "^1.0.1",
     "commander": "^2.9.0",
