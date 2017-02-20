@@ -1,0 +1,24 @@
+{
+  "name": "crawler-cli",
+  "version": "0.1.0",
+  "description": "A simple command line app for controlling a GitHub Crawler",
+  "scripts": {
+    "start": "node ./bin/cc.js"
+  },
+  "keywords": [
+    "GitHub",
+    "API",
+    "crawler"
+  ],
+  "author": "Jeff McAffer",
+  "license": "MIT",
+  "dependencies": {
+    "argv-split": "^1.0.1",
+    "commander": "^2.9.0",
+    "painless-config": "^0.1.0",
+    "q": "1.4.1",
+    "readline": "^1.3.0",
+    "request": "^2.79.0"
+  },
+  "devDependencies": {}
+}

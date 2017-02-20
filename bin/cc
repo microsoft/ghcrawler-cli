@@ -1,0 +1,115 @@
+#!/usr/bin/env node
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+const commander = require('commander');
+const CrawlerClient = require('../lib/crawlerClient');
+const readline = require('readline');
+const split = require('argv-split');
+const Q = require('q');
+
+const crawlerClient = new CrawlerClient(process.env.CRAWLER_SERVICE_URL || 'http://localhost:3000', process.env.CRAWLER_SERVICE_AUTH_TOKEN || 'secret');
+let promise = Q();
+
+const commands = getCommands();
+if (!process.argv.slice(2).length) {
+  commands.help();
+}
+commands.parse(process.argv);
+promise.then(() => {
+  if (commands.interactive) {
+    startReplLoop(commands);
+  }
+});
+
+function getCommands() {
+  const commands = new commander.Command()
+  commands
+    .version('0.0.1')
+    .option('-i, --interactive', 'Run in interactive mode. Otherwise the given command is executed and this tool exits.')
+    .option('-s, --service <url>', 'URL of the crawler service', url => crawlerUrl = url)
+    .option('-t, --token <token>', 'Token for talking to the crawler service', token => authToken = token);
+  commands
+    .command('help')
+    .description('Print out this message')
+    .action(() => commands.outputHelp());
+  commands
+    .command('stop')
+    .description('Stop all processing in the crawler')
+    .action(() => configureCount(0));
+  commands
+    .command('queue <requests...>')
+    .description('Queue the given list of orgs and/or repos to be processed.')
+    .action(requests => queueRequests(requests));
+  commands
+    .command('start [count]')
+    .description('Start the crawler processing request with [count] concurrency')
+    .action(count => configureCount(count || 1));
+  commands
+    .command('orgs <orgs...>')
+    .description('Configure the crawler to process requests from only the given GitHub organizations')
+    .action(orgs => configureOrgs(orgs));
+  commands
+    .command('config')
+    .description('Dump the current crawler configuration to the console')
+    .action(dumpConfig);
+  commands
+    .command('tokens <tokens...>')
+    .description('Set the GitHub tokens to be used by the crawler. The parameter is a list of <token>#<trait>[,<trait>]* where the possible traits are "admin", "public", and "private"')
+    .action(() => setTokens(tokens));
+  commands
+    .command('exit')
+    .description('Exit this tool')
+    .action(() => process.exit(0));
+  return commands;
+}
+
+function startReplLoop(commands) {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+
+  rl.setPrompt(crawlerUrl + '> ');
+  rl.prompt();
+
+  rl.on('line', (line) => {
+    const command = split(line);
+    // pad up the command line to keep commander happy
+    command.unshift('node', 'cc');
+    commands.parse(command);
+    promise
+      .catch(error => console.log(error.message))
+      .finally(() => {
+        promise = Q();
+        rl.prompt();
+      });
+  });
+}
+
+function configureCount(count) {
+  count = Math.max(count, 0);
+  const patch = [
+    { "op": "replace", "path": "/crawler/count", "value": count }
+  ];
+  promise = crawlerClient.configureCrawler(patch).then(() => console.log(`${count ? 'Started' : 'Stopped'} crawler processing`));
+}
+
+function configureOrgs(orgs) {
+  const patch = [
+    { "op": "replace", "path": "/crawler/orgList", "value": orgs }
+  ];
+  promise = crawlerClient.configureCrawler(patch).then(() => console.log('Configured org list'));
+}
+
+function dumpConfig() {
+  promise = crawlerClient.getConfiguration().then(config => console.dir(config));
+}
+
+function setTokens(tokens) {
+  promise = crawlerClient.setTokens(tokens).then(() => console.log('Tokens set'));
+}
+
+function queueRequests(specs) {
+  promise = crawlerClient.queueRequests(specs).then(() => console.log(`Queued ${specs.length} requests`));
+}
