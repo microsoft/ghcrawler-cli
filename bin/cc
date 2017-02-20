@@ -27,7 +27,7 @@ function getCommands() {
   commands
     .version('0.0.1')
     .option('-i, --interactive', 'Run in interactive mode. Otherwise the given command is executed and this tool exits.')
-    .option('-s, --service <url>', 'URL of the crawler service', url => crawlerUrl = url)
+    .option('-s, --service <url>', 'URL of the crawler service', url => crawlerClient.url = url)
     .option('-t, --token <token>', 'Token for talking to the crawler service', token => authToken = token);
   commands
     .command('help')
@@ -70,7 +70,7 @@ function startReplLoop(commands) {
     output: process.stdout
   });
 
-  rl.setPrompt(crawlerUrl + '> ');
+  rl.setPrompt(crawlerClient.url + '> ');
   rl.prompt();
 
   rl.on('line', (line) => {
