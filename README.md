@@ -1,9 +1,7 @@
 # Crawler command line
 
 [GHCrawler](https://github.com/Microsoft/ospo-ghcrawler.git) is utility for walking GitHub APIs and tracking GitHub events. This command line app allows you to control various
-aspects of a crawler's behavior. There is some overlap in function with the [Crawler Dashboard](https://github.com/Microsoft/crawler-dashboard.git)
-
-This project also has a simple Node client library for talking to a crawler.
+aspects of a crawler's behavior. There is some overlap in function with the [Crawler Dashboard](https://github.com/Microsoft/crawler-dashboard.git). This project also has a simple Node client library for talking to a crawler.
 
 # Controlling a crawler
 
