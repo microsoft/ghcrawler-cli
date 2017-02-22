@@ -8,7 +8,7 @@ const readline = require('readline');
 const split = require('argv-split');
 const Q = require('q');
 
-const crawlerClient = new CrawlerClient(process.env.CRAWLER_SERVICE_URL || 'http://localhost:3000', process.env.CRAWLER_SERVICE_AUTH_TOKEN || 'secret');
+const crawlerClient = new CrawlerClient();
 let promise = Q();
 
 const commands = getCommands();
