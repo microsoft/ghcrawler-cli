@@ -38,7 +38,7 @@ function getCommands() {
     .description('Stop all processing in the crawler')
     .action(() => configureCount(0));
   commands
-    .command('queue <requests...>')
+    .command('queue <requests>')
     .description('Queue the given list of orgs and/or repos to be processed.')
     .action(requests => queueRequests(requests));
   commands
@@ -111,5 +111,7 @@ function setTokens(tokens) {
 }
 
 function queueRequests(specs) {
-  promise = crawlerClient.queueRequests(specs).then(() => console.log(`Queued ${specs.length} requests`));
+  let requests = JSON.parse(specs);
+  requests = Array.isArray(requests) ? requests : [requests];
+  promise = crawlerClient.queueRequests(requests).then(() => console.log(`Queued ${requests.length} requests`));
 }
