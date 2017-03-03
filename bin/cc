@@ -7,6 +7,7 @@ const CrawlerClient = require('../lib/crawlerClient');
 const readline = require('readline');
 const split = require('argv-split');
 const Q = require('q');
+const qlimit = require('qlimit');
 
 const crawlerClient = new CrawlerClient();
 let promise = Q();
@@ -58,6 +59,14 @@ function getCommands() {
     .description('Set the GitHub tokens to be used by the crawler. The parameter is a list of <token>#<trait>[,<trait>]* where the possible traits are "admin", "public", and "private"')
     .action(() => setTokens(tokens));
   commands
+    .command('deadletters')
+    .option('-c, --count', 'Count all deadletters')
+    .option('-l, --list', 'List all deadletters')
+    .option('-r, --requeue [urn]', 'Requeue deadletter with given urn.  Requeue all if no urn specified.')
+    .option('-d, --delete <urn>', 'Delete the deadletter with the given urn')
+    .description('Manage deadletters')
+    .action(options => deadletters(options));
+  commands
     .command('exit')
     .description('Exit this tool')
     .action(() => process.exit(0));
@@ -79,7 +88,8 @@ function startReplLoop(commands) {
     command.unshift('node', 'cc');
     commands.parse(command);
     promise
-      .catch(error => console.log(error.message))
+      .catch(error =>
+        console.log(error.message))
       .finally(() => {
         promise = Q();
         rl.prompt();
@@ -90,14 +100,14 @@ function startReplLoop(commands) {
 function configureCount(count) {
   count = Math.max(count, 0);
   const patch = [
-    { "op": "replace", "path": "/crawler/count", "value": count }
+    { op: 'replace', path: '/crawler/count', value: count }
   ];
   promise = crawlerClient.configureCrawler(patch).then(() => console.log(`${count ? 'Started' : 'Stopped'} crawler processing`));
 }
 
 function configureOrgs(orgs) {
   const patch = [
-    { "op": "replace", "path": "/crawler/orgList", "value": orgs }
+    { op: 'replace', path: '/crawler/orgList', value: orgs }
   ];
   promise = crawlerClient.configureCrawler(patch).then(() => console.log('Configured org list'));
 }
@@ -114,4 +124,54 @@ function queueRequests(specs) {
   let requests = JSON.parse(specs);
   requests = Array.isArray(requests) ? requests : [requests];
   promise = crawlerClient.queueRequests(requests).then(() => console.log(`Queued ${requests.length} requests`));
+}
+
+function deadletters(options) {
+  if (options.count) {
+    return countDeadletters();
+  }
+  if (options.list) {
+    return listDeadletters();
+  }
+  if (options.requeue) {
+    if (options.requeue === true) {
+      return requeueDeadletters();
+    }
+    return requeueDeadletter(options.requeue);
+  }
+  if (options.delete) {
+    return deleteDeadletter(options.delete);
+  }
+}
+
+function countDeadletters() {
+  promise = crawlerClient.getDeadletterCount().then(count => {
+    console.log(`There are ${count} deadletters`);
+  });
+}
+
+function listDeadletters() {
+  promise = crawlerClient.listDeadletters().then(deadletters => {
+    for (let i = 0; i < deadletters.length; i++) {
+      const deadletter = deadletters[i];
+      console.log(`${deadletter.extra.type} ${deadletter.extra.url} ${deadletter.extra.reason}`);
+    }
+  });
+}
+
+function requeueDeadletters() {
+  promise = crawlerClient.listDeadletters().then(deadletters => {
+    return Q.all(deadletters.map(qlimit(10)(deadletter => {
+      return crawlerClient.requeueDeadletter(deadletter.urn);
+    }))).then(() =>
+      console.log(`Requeued all deadletters`));
+  });
+}
+
+function requeueDeadletter(urn) {
+  promise = crawlerClient.requeueDeadletter(urn).then(() => console.log(`Requeued ${urn}`));
+}
+
+function deleteDeadletter(urn) {
+  promise = crawlerClient.deleteDeadletter(urn).then(() => console.log(`Deleted ${urn}`));
 }
