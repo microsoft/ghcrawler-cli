@@ -10,7 +10,6 @@ const Q = require('q');
 const qlimit = require('qlimit');
 const request = require('request');
 const split = require('split');
-const throttle = require('throttle');
 
 const crawlerClient = new CrawlerClient();
 let promise = Q();
