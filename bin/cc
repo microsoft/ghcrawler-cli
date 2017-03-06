@@ -2,12 +2,15 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+const argSplit = require('argv-split');
 const commander = require('commander');
 const CrawlerClient = require('../lib/crawlerClient');
 const readline = require('readline');
-const split = require('argv-split');
 const Q = require('q');
 const qlimit = require('qlimit');
+const request = require('request');
+const split = require('split');
+const throttle = require('throttle');
 
 const crawlerClient = new CrawlerClient();
 let promise = Q();
@@ -39,7 +42,7 @@ function getCommands() {
     .description('Stop all processing in the crawler')
     .action(() => configureCount(0));
   commands
-    .command('queue <requests>')
+    .command('queue <requests...>')
     .description('Queue the given list of orgs and/or repos to be processed.')
     .action(requests => queueRequests(requests));
   commands
@@ -67,6 +70,11 @@ function getCommands() {
     .description('Manage deadletters')
     .action(options => deadletters(options));
   commands
+    .command('events <url>')
+    .option('-z, --test', 'Test mode.  Process but do not actually queue the events.')
+    .description('Backfill the events in the resource at the URL. The resource is assumed to be one JSON object per line')
+    .action((url, options) => queueEvents(url, options));
+  commands
     .command('exit')
     .description('Exit this tool')
     .action(() => process.exit(0));
@@ -83,7 +91,7 @@ function startReplLoop(commands) {
   rl.prompt();
 
   rl.on('line', (line) => {
-    const command = split(line);
+    const command = argSplit(line);
     // pad up the command line to keep commander happy
     command.unshift('node', 'cc');
     commands.parse(command);
@@ -121,8 +129,8 @@ function setTokens(tokens) {
 }
 
 function queueRequests(specs) {
-  let requests = JSON.parse(specs);
-  requests = Array.isArray(requests) ? requests : [requests];
+  let requests = Array.isArray(specs) ? specs : [specs];
+  requests = requests.map(request => request.trim().startsWith('{') ? JSON.parse(request) : request);
   promise = crawlerClient.queueRequests(requests).then(() => console.log(`Queued ${requests.length} requests`));
 }
 
@@ -174,4 +182,59 @@ function requeueDeadletter(urn) {
 
 function deleteDeadletter(urn) {
   promise = crawlerClient.deleteDeadletter(urn).then(() => console.log(`Deleted ${urn}`));
+}
+
+function queueEvents(url, options) {
+  let requests = [];
+  let count = 0;
+  let bytes = 0;
+  const response = request(url);
+  response
+    .pipe(split())
+    .on('data', (line) => {
+      const request = createEventRequest(line);
+      if (!request) {
+        return;
+      }
+      bytes += line.length;
+      requests.push(request);
+      if (requests.length === 10 && !options.test) {
+        const toQueue = requests.slice();
+        requests = [];
+        response.pause();
+        count += 10;
+        crawlerClient.queueRequests(toQueue, 'later').then(
+          () => {
+            console.log(`Queued ${count} events and ${bytes} bytes so far...`);
+            response.resume();
+          },
+          error =>
+            console.log(error)
+        );
+      }
+    })
+    .on('error', error => {
+      console.log(error);
+    })
+    .on('end', () => {
+      console.log('ended');
+    });
+}
+
+function createEventRequest(line) {
+  try {
+    const event = JSON.parse(line);
+    delete event._id;
+    const eventUrlBase = event.repo ? event.repo.url : event.org.url;
+    const request = { type: event.type, url: `${eventUrlBase}/events/${event.id}` };
+    request.payload = { body: event, etag: 1 };
+    if (event.created_at) {
+      request.payload.fetchedAt = event.created_at;
+    }
+    request.policy = 'default:self';
+    return request;
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
 }
