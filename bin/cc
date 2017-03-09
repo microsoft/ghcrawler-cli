@@ -42,8 +42,9 @@ function getCommands() {
     .action(() => configureCount(0));
   commands
     .command('queue <requests...>')
+    .option('-q, --queue <name>', 'The queue onto which the requests are pushed')
     .description('Queue the given list of orgs and/or repos to be processed.')
-    .action(requests => queueRequests(requests));
+    .action((requests, options) => queueRequests(requests, options));
   commands
     .command('start [count]')
     .description('Start the crawler processing request with [count] concurrency')
@@ -127,10 +128,10 @@ function setTokens(tokens) {
   promise = crawlerClient.setTokens(tokens).then(() => console.log('Tokens set'));
 }
 
-function queueRequests(specs) {
+function queueRequests(specs, options) {
   let requests = Array.isArray(specs) ? specs : [specs];
   requests = requests.map(request => request.trim().startsWith('{') ? JSON.parse(request) : request);
-  promise = crawlerClient.queueRequests(requests).then(() => console.log(`Queued ${requests.length} requests`));
+  promise = crawlerClient.queueRequests(requests, options.queue).then(() => console.log(`Queued ${requests.length} requests`));
 }
 
 function deadletters(options) {
