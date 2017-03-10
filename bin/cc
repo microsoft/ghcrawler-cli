@@ -217,7 +217,14 @@ function queueEvents(url, options) {
       console.log(error);
     })
     .on('end', () => {
-      console.log('ended');
+      crawlerClient.queueRequests(requests, 'later').then(
+        () => {
+          console.log(`Queued ${count + requests.length} events and ${bytes} bytes`);
+        },
+        error =>
+          console.log(error)
+      ).finally(() =>
+        console.log('Done'));
     });
 }
 
