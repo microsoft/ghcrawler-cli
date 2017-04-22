@@ -31,7 +31,7 @@ function getCommands() {
     .version('0.0.1')
     .option('-i, --interactive', 'Run in interactive mode. Otherwise the given command is executed and this tool exits.')
     .option('-s, --service <url>', 'URL of the crawler service', url => crawlerClient.url = url)
-    .option('-t, --token <token>', 'Token for talking to the crawler service', token => authToken = token);
+    .option('-t, --token <token>', 'Token for talking to the crawler service', token => crawlerClient.authToken = token);
   commands
     .command('help')
     .description('Print out this message')
