@@ -1,5 +1,5 @@
 {
-  "name": "crawler-cli",
+  "name": "ghcrawler-cli",
   "version": "0.1.3",
   "description": "A simple command line app for controlling a GitHub Crawler",
   "main": "./lib/crawlerClient.js",
@@ -7,6 +7,8 @@
     "start": "node ./bin/cc.js"
   },
   "keywords": [
+    "cli",
+    "command line",
     "GitHub",
     "API",
     "crawler"
@@ -15,11 +17,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/microsoft/crawler-cli.git"
+    "url": "git+https://github.com/microsoft/ghcrawler-cli.git"
   },
-  "homepage": "https://github.com/microsoft/crawler-cli#readme",
+  "homepage": "https://github.com/microsoft/ghcrawler-cli#readme",
   "bugs": {
-    "url": "https://github.com/microsoft/crawler-cli/issues"
+    "url": "https://github.com/microsoft/ghcrawler-cli/issues"
   },
   "files": [
     "bin/cc",
