@@ -31,7 +31,7 @@ function getCommands() {
     .version('0.0.1')
     .option('-i, --interactive', 'Run in interactive mode. Otherwise the given command is executed and this tool exits.')
     .option('-s, --service <url>', 'URL of the crawler service', url => crawlerClient.url = url)
-    .option('-t, --token <token>', 'Token for talking to the crawler service', token => authToken = token);
+    .option('-t, --token <token>', 'Token for talking to the crawler service', token => crawlerClient.authToken = token);
   commands
     .command('help')
     .description('Print out this message')
@@ -42,8 +42,9 @@ function getCommands() {
     .action(() => configureCount(0));
   commands
     .command('queue <requests...>')
+    .option('-q, --queue <name>', 'The queue onto which the requests are pushed')
     .description('Queue the given list of orgs and/or repos to be processed.')
-    .action(requests => queueRequests(requests));
+    .action((requests, options) => queueRequests(requests, options));
   commands
     .command('start [count]')
     .description('Start the crawler processing request with [count] concurrency')
@@ -127,10 +128,10 @@ function setTokens(tokens) {
   promise = crawlerClient.setTokens(tokens).then(() => console.log('Tokens set'));
 }
 
-function queueRequests(specs) {
+function queueRequests(specs, options) {
   let requests = Array.isArray(specs) ? specs : [specs];
   requests = requests.map(request => request.trim().startsWith('{') ? JSON.parse(request) : request);
-  promise = crawlerClient.queueRequests(requests).then(() => console.log(`Queued ${requests.length} requests`));
+  promise = crawlerClient.queueRequests(requests, options.queue).then(() => console.log(`Queued ${requests.length} requests`));
 }
 
 function deadletters(options) {
@@ -216,7 +217,14 @@ function queueEvents(url, options) {
       console.log(error);
     })
     .on('end', () => {
-      console.log('ended');
+      crawlerClient.queueRequests(requests, 'later').then(
+        () => {
+          console.log(`Queued ${count + requests.length} events and ${bytes} bytes`);
+        },
+        error =>
+          console.log(error)
+      ).finally(() =>
+        console.log('Done'));
     });
 }
 
