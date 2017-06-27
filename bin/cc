@@ -60,7 +60,7 @@ function getCommands() {
   commands
     .command('tokens <tokens...>')
     .description('Set the GitHub tokens to be used by the crawler. The parameter is a list of <token>#<trait>[,<trait>]* where the possible traits are "admin", "public", and "private"')
-    .action(() => setTokens(tokens));
+    .action(tokens => setTokens(tokens));
   commands
     .command('deadletters')
     .option('-c, --count', 'Count all deadletters')
