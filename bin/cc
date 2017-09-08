@@ -60,7 +60,11 @@ function getCommands() {
   commands
     .command('tokens <tokens...>')
     .description('Set the GitHub tokens to be used by the crawler. The parameter is a list of <token>#<trait>[,<trait>]* where the possible traits are "admin", "public", and "private"')
-    .action(() => setTokens(tokens));
+    .action(tokens => setTokens(tokens));
+  commands
+    .command('listtokens')
+    .description('List GitHub tokens being used by the crawler.')
+    .action(getTokens);
   commands
     .command('deadletters')
     .option('-c, --count', 'Count all deadletters')
@@ -126,6 +130,12 @@ function dumpConfig() {
 
 function setTokens(tokens) {
   promise = crawlerClient.setTokens(tokens).then(() => console.log('Tokens set'));
+}
+
+function getTokens() {
+  promise = crawlerClient.getTokens().then(tokens => console.log(tokens.map(t => {
+    return `${t.value}#${t.traits.join(",")}`
+  }).join("\n")));
 }
 
 function queueRequests(specs, options) {
