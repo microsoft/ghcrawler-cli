@@ -24,7 +24,7 @@ The available commands are:
 
  `stop` -- Stop crawler processing. The crawler service is left running but it stops pulling requests off the queue.  This is the same as `start 0`.
 
- `queue <requests...>` -- Queues the given requests for processing. The requests parameter is a list of GitHub "org" and/or "org/repo" names.
+ `queue <requests...>` -- Queues the given requests for processing. The requests parameter is a list of GitHub "${org}" and/or "${org}/${repo}" and/or "users/${user}" names.
 
 `orgs <org orgs...>` -- Set the crawler's to traverse only the GitHub orgs named in the given list.
 
@@ -39,6 +39,16 @@ A typical sequence shown in the snippet below configures the crawler with a set 
 http://localhost:3000> tokens 43984b2344ca575d0f0e097efd97#public 972bbdfe098098fa9ce082309#admin
 http://localhost:3000> orgs contoso-d
 http://localhost:3000> queue contoso-d
+http://localhost:3000> start 5
+http://localhost:3000> exit
+```
+
+Here's another example. If you want to queue up 2 users, without configuring an org, you can use this sequence. This is useful if you want to capture all events from a specific user or users.
+
+```
+> node bin/cc -i
+http://localhost:3000> tokens 43984b2344ca575d0f0e097efd97#public 972bbdfe098098fa9ce082309#admin
+http://localhost:3000> queue users/octocat users/microsoftopensource
 http://localhost:3000> start 5
 http://localhost:3000> exit
 ```
