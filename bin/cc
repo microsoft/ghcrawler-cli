@@ -43,7 +43,7 @@ function getCommands() {
   commands
     .command('queue <requests...>')
     .option('-q, --queue <name>', 'The queue onto which the requests are pushed')
-    .description('Queue the given list of orgs and/or repos to be processed.')
+    .description('Queue the given list of orgs and/or repos and/or users to be processed.')
     .action((requests, options) => queueRequests(requests, options));
   commands
     .command('start [count]')
